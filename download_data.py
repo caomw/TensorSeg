@@ -14,6 +14,8 @@ import zipfile
 from six.moves import urllib
 from shutil import copy2
 
+import argparse
+
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                     level=logging.INFO,
                     stream=sys.stdout)
@@ -27,7 +29,6 @@ sys.path.insert(1, 'incl')
 #
 # Replace 'http://kitti.is.tue.mpg.de/kitti/?????????.???' by the
 # correct URL.
-kitti_data_url = 'http://kitti.is.tue.mpg.de/kitti/?????????.???'
 
 
 vgg_url = 'https://dl.dropboxusercontent.com/u/50333326/vgg16.npy'
@@ -74,6 +75,12 @@ def download(url, dest_directory):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--kitti_url', default='', type=str)
+    args = parser.parse_args()
+
+    kitti_data_url = args.kitti_url
+
     data_dir, run_dir = get_pathes()
 
     vgg_weights = os.path.join(data_dir, 'vgg16.npy')
@@ -94,21 +101,32 @@ def main():
 
     # Download KITTI DATA
     if not os.path.exists(data_road_zip):
-        if kitti_data_url == 'http://kitti.is.tue.mpg.de/kitti/?????????.???':
-            logging.error("Data URL for Kitti Data unknown.")
+        if kitti_data_url == '':
+            logging.error("Data URL for Kitti Data not provided.")
             url = "http://www.cvlibs.net/download.php?file=data_road.zip"
             logging.error("Please visit: {}".format(url))
-            logging.error("Request a Kitti Download link and set "
-                          "'kitti_data_url' in download_data.py to"
-                          "the correct URL and rerun the script.")
+            logging.error("and request Kitti Download link.")
+            logging.error("Rerun scipt using"
+                          "'python download_data.py' --kitti_url [url]")
+            exit(1)
+        if not kitti_data_url[-19:] == 'kitti/data_road.zip':
+            logging.error("Wrong url.")
+            url = "http://www.cvlibs.net/download.php?file=data_road.zip"
+            logging.error("Please visit: {}".format(url))
+            logging.error("and request Kitti Download link.")
+            logging.error("Rerun scipt using"
+                          "'python download_data.py' --kitti_url [url]")
             exit(1)
         else:
             logging.info("Downloading Kitti Road Data.")
             download(kitti_data_url, data_dir)
 
     # Extract and prepare KITTI DATA
+    logging.info("Extracting kitti_road data.")
     zipfile.ZipFile(data_road_zip, 'r').extractall(data_dir)
     kitti_road_dir = os.path.join(data_dir, 'data_road/')
+
+    logging.info("Preparing kitti_road data.")
 
     train_txt = "data_scripts/train3.txt"
     val_txt = "data_scripts/val3.txt"

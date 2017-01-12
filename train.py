@@ -81,12 +81,12 @@ def main(_):
     utils.set_gpus_to_use()
 
     try:
-        import tensorvision
-        import tensorflow_fcn
+        import tensorvision.train
+        import tensorflow_fcn.utils
     except ImportError:
         logging.error("Could not import the submodules.")
-        logging.error("Use `git clone --recursive` to clone TensorSeg with "
-                      "all submodules.")
+        logging.error("Please execute:"
+                      "'git submodule update --init --recursive'")
         exit(1)
 
     with open(tf.app.flags.FLAGS.hypes, 'r') as f:
@@ -103,6 +103,12 @@ def main(_):
         os.environ['TV_DIR_RUNS'] = os.path.join(os.environ['TV_DIR_RUNS'],
                                                  'KittiSeg')
     utils.set_dirs(hypes, tf.app.flags.FLAGS.hypes)
+
+    if not os.path.exists(hypes['dirs']['data_dir']):
+        logging.error("Data dir: {} does not exist.".format(
+            hypes['dirs']['data_dir']))
+        logging.error("Have you executed 'python download_data.py' ?")
+        exit(1)
 
     utils._add_paths_to_sys(hypes)
 
